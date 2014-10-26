@@ -1,11 +1,22 @@
-//Allows you to use yaml config files for configuration
-//You can even use ENVIRONMENT VARS in your config
+//Package config allows you to use an environment based
+//configuration file with ability to interpolate environment
+//variables inside the configuration file.
 //e.g. ./config.yml
+//    default: &default
+//      database: awesome_{{.GOENV}}
+//      mongo:
+//        host: localhost:3030
+//        username: foob
+//        password: boof
 //    development:
-//      database: websrvr_{{.GOENV}}
+//      <<: *default
 //
-//    test:
-//      database: websrvr_{{.GOENV}}
+//    production:
+//      <<: *default
+//      mongo:
+//        host: {{.MONGO_URL}}
+//        username: {{.MONGO_USER}}
+//        password: {{.MONGO_PASSWORD}}
 package config
 
 import (
@@ -22,40 +33,30 @@ import (
 )
 
 var (
+	//GOENV holds the current value if it is invoked with it
+	//e.g. GOENV=test go run * will set GOENV to test
+	//if the app is invoked without any GOENV it is set to the DEFAULTENV
 	GOENV string
+	//DEFAULTENV is set to development by default but you can change this
+	//before calling config.Load to change the default GOENV value
+	DEFAULTENV = "development"
 )
 
-func getEnv() map[string]string {
-
-	//prep the env
-	env := make(map[string]string)
-
-	//parse env vars
-	for _, e := range os.Environ() {
-		idx := strings.Index(e, "=")
-		//if env var is malformed
-		if idx < 0 {
-			continue
-		}
-		env[e[:idx]] = e[idx+1:]
+//LoadFromFile allows you to read the configuration from a file on disk
+//path is the path to the config file, e.g. "./config.yml
+//config is a pointer to your config variable
+//logfunc is the function used to log errors if any, you can pass nil if you don't care about the log function
+func LoadFromFile(path string, config interface{}, logFunc func(args ...interface{})) {
+	f, err := os.Open(path)
+	if err != nil {
+		panic(err)
 	}
-
-	//set default env var
-	var ok bool
-	GOENV, ok = env["GOENV"]
-	if !ok {
-		env["GOENV"] = DEFAULTENV
-		GOENV = DEFAULTENV
-	}
-
-	return env
+	defer f.Close()
+	Load(f, config, logFunc)
 }
 
-//This env will be loaded if GOENV is not set
-var DEFAULTENV = "development"
-
-//Pass the address of the config variable
-//e.g. config.Load(r, &config, nil)
+//Load allows you to read the configuration from an io.Reader instead of a file
+//Check the LoadFromFile function for more information on arguments
 func Load(r io.Reader, config interface{}, logFunc func(args ...interface{})) {
 	if logFunc == nil {
 		logFunc = log.Println
@@ -93,15 +94,28 @@ func Load(r io.Reader, config interface{}, logFunc func(args ...interface{})) {
 	}
 }
 
-//Loads the config file from the `path` e.g. "./config.yml
-//config is a pointer to your config type
-//logfunc is the function used to log errors if any,
-//you can pass nil if you don't care about the log function
-func LoadFromFile(path string, config interface{}, logFunc func(args ...interface{})) {
-	f, err := os.Open(path)
-	if err != nil {
-		panic(err)
+func getEnv() map[string]string {
+
+	//prep the env
+	env := make(map[string]string)
+
+	//parse env vars
+	for _, e := range os.Environ() {
+		idx := strings.Index(e, "=")
+		//if env var is malformed
+		if idx < 0 {
+			continue
+		}
+		env[e[:idx]] = e[idx+1:]
 	}
-	defer f.Close()
-	Load(f, config, logFunc)
+
+	//set default env var
+	var ok bool
+	GOENV, ok = env["GOENV"]
+	if !ok {
+		env["GOENV"] = DEFAULTENV
+		GOENV = DEFAULTENV
+	}
+
+	return env
 }

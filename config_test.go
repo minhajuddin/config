@@ -14,7 +14,7 @@ var config = struct {
 	DB      string
 	Cache   string
 	Websrvr struct {
-		ApiURL string `yaml:"api_url"`
+		APIURL string `yaml:"api_url"`
 		Creds  struct {
 			Username string
 			Password string
@@ -62,7 +62,7 @@ func TestDev(t *testing.T) {
 	assert.Equal(config.Host, "localhost")
 	assert.Equal(config.ENV, "development")
 	assert.Equal(config.DB, "host=/var/run/postgresql dbname=awesome_development sslmode=disable")
-	assert.Equal(config.Websrvr.ApiURL, "https://sandbox.websrvr.in/1/")
+	assert.Equal(config.Websrvr.APIURL, "https://sandbox.websrvr.in/1/")
 	assert.Equal(config.Websrvr.Creds.Username, "foobar")
 	assert.Equal(config.Websrvr.Creds.Password, "awesome")
 
@@ -83,7 +83,7 @@ func TestProduction(t *testing.T) {
 	assert.Equal(config.Host, "minhajuddin.com/")
 	assert.Equal(config.ENV, "production")
 	assert.Equal(config.DB, "host=/var/run/postgresql dbname=awesome_production sslmode=disable")
-	assert.Equal(config.Websrvr.ApiURL, "https://api.websrvr.in/1/")
+	assert.Equal(config.Websrvr.APIURL, "https://api.websrvr.in/1/")
 	assert.Equal(config.Websrvr.Creds.Username, "supersecretuser")
 	assert.Equal(config.Websrvr.Creds.Password, "supersecretpassword")
 
