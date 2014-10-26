@@ -34,12 +34,12 @@ import (
 )
 
 var (
-	//GOENV holds the current value if it is invoked with it
-	//e.g. GOENV=test go run * will set GOENV to test
-	//if the app is invoked without any GOENV it is set to the DEFAULTENV
+	//GOENV holds the current value if it is invoked with it.
+	//e.g. GOENV=test go run * will set GOENV to test.
+	//if the app is invoked without any GOENV it is set to the DEFAULTENV.
 	GOENV string
 	//DEFAULTENV is set to development by default but you can change this
-	//before calling config.Load to change the default GOENV value
+	//before calling config.Load to change the default GOENV value.
 	DEFAULTENV = "development"
 )
 
@@ -47,6 +47,20 @@ var (
 //path is the path to the config file, e.g. "./config.yml".
 //config is a pointer to your config variable.
 //logfunc is the function used to log errors if any, you can pass nil if you don't care about the log function.
+//Usage:
+//    var C struct {
+//      Host    string
+//      DB      string
+//      Websrvr struct {
+//        ApiURL string `yaml:"api_url"`
+//      }
+//    }
+//
+//    func main() {
+//      //load config
+//      config.LoadFromFile("./config.yml", &C, log.Info)
+//      //....
+
 func LoadFromFile(path string, config interface{}, logFunc func(args ...interface{})) error {
 	if logFunc == nil {
 		logFunc = log.Println
@@ -67,8 +81,8 @@ func LoadFromFile(path string, config interface{}, logFunc func(args ...interfac
 	return Load(f, config, logFunc)
 }
 
-//Load allows you to read the configuration from an io.Reader instead of a file
-//Check the LoadFromFile function for more information on arguments
+//Load allows you to read the configuration from an io.Reader instead of a file.
+//Check the LoadFromFile function for more information on arguments.
 func Load(r io.Reader, config interface{}, logFunc func(args ...interface{})) error {
 	if logFunc == nil {
 		logFunc = log.Println
