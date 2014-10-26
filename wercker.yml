@@ -9,11 +9,11 @@ build:
 
     # Gets the dependencies
     - script:
-        name: go get -t
+        name: go get
         code: |
           cd $WERCKER_SOURCE_DIR
           go version
-          go get
+          go get -t
 
     # Build the project
     - script:
