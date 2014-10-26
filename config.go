@@ -51,7 +51,12 @@ func LoadFromFile(path string, config interface{}, logFunc func(args ...interfac
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
+	defer func() {
+		err := f.Close()
+		if err != nil {
+			logFunc(err)
+		}
+	}()
 	Load(f, config, logFunc)
 }
 
@@ -64,6 +69,7 @@ func Load(r io.Reader, config interface{}, logFunc func(args ...interface{})) {
 
 	configBytes, err := ioutil.ReadAll(r)
 	if err != nil {
+		logFunc("ERROR reading from source", err)
 		panic(err)
 	}
 	logFunc("CONFIG: ", string(configBytes))
@@ -72,7 +78,11 @@ func Load(r io.Reader, config interface{}, logFunc func(args ...interface{})) {
 
 	//pass env to config
 	var b bytes.Buffer
-	tpl.Execute(&b, getEnv())
+	err = tpl.Execute(&b, getEnv())
+	if err != nil {
+		logFunc("ERROR in compiling the template. Check http://golang.org/pkg/text/template/ for the template format", err)
+		panic(err)
+	}
 
 	kt := reflect.TypeOf("")
 	vt := reflect.TypeOf(config)
@@ -80,7 +90,11 @@ func Load(r io.Reader, config interface{}, logFunc func(args ...interface{})) {
 
 	configData := m.Interface()
 
-	yaml.Unmarshal(b.Bytes(), configData)
+	err = yaml.Unmarshal(b.Bytes(), configData)
+	if err != nil {
+		logFunc("ERROR in parsing YAML", err)
+		panic(err)
+	}
 
 	c := m.MapIndex(reflect.ValueOf(GOENV))
 
