@@ -5,9 +5,44 @@ config
 
 Load environment specific config files
 
-sample `config.yml` file
-
 For more information read the documentation at [godoc.org](https://godoc.org/bitbucket.org/utils/config?status.svg).
+
+Usage:
+
+~~~go
+package main
+
+import (
+	"fmt"
+
+	"bitbucket.org/utils/config"
+)
+
+var C struct {
+	Host    string
+	ENV     string
+	DB      string
+	Cache   string
+	Websrvr struct {
+		ApiURL string `yaml:"api_url"`
+		Creds  struct {
+			Username string
+			Password string
+		}
+	}
+}
+
+func main() {
+	//load config
+	config.LoadFromFile("./config.yml", &C, nil)
+	fmt.Printf("%#v\n", C)
+	fmt.Println(C.Websrvr.ApiURL)
+	//use it as a normal struct
+	//C.Websrvr.ApiURL etc,..
+}
+~~~
+
+sample `config.yml` file
 
 ~~~yaml
 ---
