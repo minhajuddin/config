@@ -60,7 +60,6 @@ var (
 //      //load config
 //      config.LoadFromFile("./config.yml", &C, log.Info)
 //      //....
-
 func LoadFromFile(path string, config interface{}, logFunc func(args ...interface{})) error {
 	if logFunc == nil {
 		logFunc = log.Println
