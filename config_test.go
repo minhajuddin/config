@@ -51,7 +51,10 @@ production:
       password: {{.DROPBOX_PASSWORD}}
 `)
 
-	Load(r, &config, t.Log)
+	err := Load(r, &config, t.Log)
+	if err != nil {
+		t.Log(err)
+	}
 }
 
 func TestDev(t *testing.T) {

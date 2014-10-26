@@ -21,6 +21,7 @@ package config
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -42,27 +43,33 @@ var (
 	DEFAULTENV = "development"
 )
 
-//LoadFromFile allows you to read the configuration from a file on disk
-//path is the path to the config file, e.g. "./config.yml
-//config is a pointer to your config variable
-//logfunc is the function used to log errors if any, you can pass nil if you don't care about the log function
-func LoadFromFile(path string, config interface{}, logFunc func(args ...interface{})) {
+//LoadFromFile allows you to read the configuration from a file on disk.
+//path is the path to the config file, e.g. "./config.yml".
+//config is a pointer to your config variable.
+//logfunc is the function used to log errors if any, you can pass nil if you don't care about the log function.
+func LoadFromFile(path string, config interface{}, logFunc func(args ...interface{})) error {
+	if logFunc == nil {
+		logFunc = log.Println
+	}
+
 	f, err := os.Open(path)
 	if err != nil {
-		panic(err)
+		logFunc("ERROR: unable to open file at path", path, err)
+		return err
 	}
+
 	defer func() {
 		err := f.Close()
 		if err != nil {
 			logFunc(err)
 		}
 	}()
-	Load(f, config, logFunc)
+	return Load(f, config, logFunc)
 }
 
 //Load allows you to read the configuration from an io.Reader instead of a file
 //Check the LoadFromFile function for more information on arguments
-func Load(r io.Reader, config interface{}, logFunc func(args ...interface{})) {
+func Load(r io.Reader, config interface{}, logFunc func(args ...interface{})) error {
 	if logFunc == nil {
 		logFunc = log.Println
 	}
@@ -70,7 +77,7 @@ func Load(r io.Reader, config interface{}, logFunc func(args ...interface{})) {
 	configBytes, err := ioutil.ReadAll(r)
 	if err != nil {
 		logFunc("ERROR reading from source", err)
-		panic(err)
+		return err
 	}
 	logFunc("CONFIG: ", string(configBytes))
 
@@ -81,7 +88,7 @@ func Load(r io.Reader, config interface{}, logFunc func(args ...interface{})) {
 	err = tpl.Execute(&b, getEnv())
 	if err != nil {
 		logFunc("ERROR in compiling the template. Check http://golang.org/pkg/text/template/ for the template format", err)
-		panic(err)
+		return err
 	}
 
 	kt := reflect.TypeOf("")
@@ -93,7 +100,7 @@ func Load(r io.Reader, config interface{}, logFunc func(args ...interface{})) {
 	err = yaml.Unmarshal(b.Bytes(), configData)
 	if err != nil {
 		logFunc("ERROR in parsing YAML", err)
-		panic(err)
+		return err
 	}
 
 	c := m.MapIndex(reflect.ValueOf(GOENV))
@@ -101,11 +108,15 @@ func Load(r io.Reader, config interface{}, logFunc func(args ...interface{})) {
 	cptr := reflect.ValueOf(config)
 
 	el := cptr.Elem()
-	if el.CanSet() {
-		el.Set(c.Elem())
-	} else {
-		logFunc("ERROR: the config variable should pass the address the config struct")
+
+	if !el.CanSet() {
+		err = errors.New("ERROR: the config variable should be a pointer")
+		logFunc(err)
+		return err
 	}
+
+	el.Set(c.Elem())
+	return nil
 }
 
 func getEnv() map[string]string {
@@ -126,6 +137,8 @@ func getEnv() map[string]string {
 	//set default env var
 	var ok bool
 	GOENV, ok = env["GOENV"]
+
+	//GOENV not set when running the app, set it to default
 	if !ok {
 		env["GOENV"] = DEFAULTENV
 		GOENV = DEFAULTENV
