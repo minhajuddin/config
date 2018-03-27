@@ -30,7 +30,7 @@ import (
 	"strings"
 	"text/template"
 
-	"gopkg.in/v1/yaml"
+	"gopkg.in/yaml.v1"
 )
 
 var (
